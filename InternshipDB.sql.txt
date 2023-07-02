@@ -1,0 +1,149 @@
+CREATE TABLE Cities(
+Id SERIAL PRIMARY KEY,
+Name VARCHAR(20) NOT NULL UNIQUE
+)
+
+CREATE TABLE Members(
+Id SERIAL PRIMARY KEY,
+Name VARCHAR(20) NOT NULL,
+Surname VARCHAR(15),
+OIB VARCHAR(11) NOT NULL UNIQUE CHECK(LENGTH(OIB) = 11),
+DateOfBirth DATE NOT NULL,
+Sex VARCHAR(1) NOT NULL CHECK(UPPER(Sex) IN ('M', 'F')),
+CityId INT REFERENCES Cities(Id)
+
+)
+
+ALTER TABLE Members
+ALTER COLUMN DateOfBirth TYPE TIMESTAMP USING DateOfBirth::TIMESTAMP,
+ADD CONSTRAINT AgeLimit CHECK
+	(DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 16 AND
+	 DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) <= 24)
+	
+
+
+
+CREATE TABLE Fields(
+Id SERIAL PRIMARY KEY,
+Name VARCHAR(20) NOT NULL,
+LeaderId INT REFERENCES Members(Id),
+InternshipId INT REFERENCES Internships(Id)	
+)
+ALTER TABLE Fields
+DROP COLUMN InternshipId;
+
+CREATE TABLE FieldMember(
+FieldId INT REFERENCES Fields(Id),
+MemberId INT REFERENCES Members(Id),
+Status VARCHAR(15) NOT NULL CHECK(LOWER(Status) IN ('pripravnik', 'izbacen','zavrsen internship')),
+PRIMARY KEY(MemberId, FieldId)
+)
+
+CREATE TABLE Homeworks(
+	Id SERIAL PRIMARY KEY,
+	Name VARCHAR(10) NOT NULL,
+	FieldId INT REFERENCES Fields(Id)
+)
+ALTER TABLE Homeworks
+ALTER COLUMN Name TYPE VARCHAR(30);
+
+
+CREATE TABLE Internships(
+Id SERIAL PRIMARY KEY,
+LeaderId INT REFERENCES Members(Id),
+StartingDate TIMESTAMP NOT NULL,
+EndingDate TIMESTAMP NOT NULL CHECK(EndingDate > StartingDate),
+CurrentPhase VARCHAR(20) CHECK(LOWER(CurrentPhase) IN ('u pripremi', 'u tijeku', 'zavrsen'))
+
+)
+
+
+CREATE TABLE MemberHomework(
+MemberId INT REFERENCES Members(Id),
+HomeworkId INT REFERENCES Homeworks(Id),
+Grade INT NOT NULL CHECK(Grade >= 1 AND Grade <=5)
+)
+
+----------------------------
+
+INSERT INTO Cities(Name) VALUES
+('Split'),
+('Zagreb'),
+('Zadar'),
+('Sibenik'),
+('Osijek'),
+('Omis')
+
+INSERT INTO Members(Name, Surname, OIB, DateOfBirth, Sex, CityId) VALUES
+  	('Robert', 'Leskur', '12354678501', '2002-06-25', 'F', 1),
+    ('Toma', 'Mudnic', '23456578912', '2001-04-10', 'M', 2),
+    ('Petar', 'Mandic', '34576890123', '2003-02-08', 'F', 3),
+    ('Filip', 'Vukoja', '45677901234', '2002-11-15', 'M', 1),
+	('Ana', 'Horvat', '12345678501', '2002-06-25', 'F', 1),
+    ('Ivan', 'Kovačić', '23456789012', '2001-04-10', 'M', 2),
+    ('Elena', 'Babić', '34567890123', '2003-02-08', 'F', 3),
+    ('Marko', 'Novak', '45678901234', '2002-11-15', 'M', 1),
+    ('Petra', 'Knežević', '56789012345', '2001-09-03', 'F', 2),
+    ('Josip', 'Horvat', '67890123456', '2004-07-12', 'M', 3),
+    ('Marija', 'Kovačić', '78901234567', '2001-05-17', 'F', 1),
+    ('Antonio', 'Babić', '89012345678', '2003-08-21', 'M', 2),
+    ('Iva', 'Novak', '90123456789', '2004-03-05', 'F', 3),
+    ('Luka', 'Knežević', '01234567890', '2002-10-09', 'M', 1)
+	
+INSERT INTO Internships(StartingDate,EndingDate,CurrentPhase,LeaderId) VALUES
+('2018-11-02', '2019-05-01', 'zavrsen', 3),
+('2019-11-02', '2020-05-01', 'zavrsen', 10),
+('2020-11-02', '2021-05-01', 'zavrsen', 1),
+('2021-11-02', '2022-05-01', 'zavrsen', 5),
+('2022-11-02', '2023-05-01', 'u tijeku', 6),
+('2022-11-02', '2023-05-01', 'u pripremi', 2)
+	
+INSERT INTO Fields(Name, LeaderId) VALUES
+('Programiranje', 5),
+('Dizajn', 1),
+('Multimedija', 7),
+('Marketing', 6)
+
+
+INSERT INTO Homeworks(Name, FieldId) VALUES
+('Dev 1 Git',1),
+('Dev 2 CSharp',1),
+('Dev 3 OOP Calendar',1),
+('Dev 4 Crypto wallet',1),
+('Diz 1 Logo',2),
+('Diz 2 UI',2),
+('Diz 3 UX',2),
+('Diz 4 Illustrator',2),
+('Mul 1 Uvod',3),
+('Mul 2 Photoshop',3),
+('Mul 3 Fotografije',3),
+('Mul 4 Portreti',3),
+('Mar 1 DR1',4),
+('Mar 2 DR2',4),
+('Mar 3 DR3',4),
+('Mar 4 DR4',4)
+
+INSERT INTO Memberhomework(MemberId, HomeworkId, Grade) VALUES
+(1, 1, 1), (1, 2, 5), (1, 3, 3), (1, 4, 3),
+(2, 1, 2), (2, 2, 4), (2, 3, 2), (2, 4, 4),
+(3, 1, 3), (3, 2, 3), (3, 3, 1), (3, 4, 5),
+(4, 1, 4), (4, 2, 2), (4, 3, 5), (4, 4, 1),
+(5, 1, 5), (5, 2, 1), (5, 3, 4), (5, 4, 2),
+(6, 1, 1), (6, 2, 5), (6, 3, 3), (6, 4, 3),
+(7, 1, 2), (7, 2, 4), (7, 3, 2), (7, 4, 4),
+(8, 1, 3), (8, 2, 3), (8, 3, 1), (8, 4, 5),
+(9, 1, 4), (9, 2, 2), (9, 3, 5), (9, 4, 1),
+(10, 1, 5), (10, 2, 1), (10, 3, 4), (10, 4, 2),
+(11, 5, 2), (11, 6, 1), (11, 7, 4), (11, 8, 2),
+(12, 5, 3), (12, 6, 2), (12, 7, 5), (12, 8, 3),
+(13, 5, 5), (13, 6, 3), (13, 7, 1), (13, 8, 4),
+(14, 9, 5), (14, 10, 4), (14, 11, 3), (14, 12, 2)
+
+
+SELECT * FROM Members
+SELECT * FROM Cities
+SELECT * FROM Internships
+SELECT * FROM Fields
+
+
+
