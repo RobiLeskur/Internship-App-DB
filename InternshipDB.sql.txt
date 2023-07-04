@@ -1,3 +1,4 @@
+---------------------------- KREIRANJE TABLICA
 CREATE TABLE Cities(
 Id SERIAL PRIMARY KEY,
 Name VARCHAR(20) NOT NULL UNIQUE
@@ -18,8 +19,13 @@ ALTER TABLE Members
 ALTER COLUMN DateOfBirth TYPE TIMESTAMP USING DateOfBirth::TIMESTAMP,
 ADD CONSTRAINT AgeLimit CHECK
 	(DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 16 AND
-	 DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) <= 24)
+	 DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) <= 40)
 	
+ALTER TABLE Members
+DROP CONSTRAINT AgeLimit,
+ADD CONSTRAINT AgeLimit CHECK
+	(DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 16 AND
+	 DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) <= 40)
 
 
 
@@ -35,7 +41,7 @@ DROP COLUMN InternshipId;
 CREATE TABLE FieldMember(
 FieldId INT REFERENCES Fields(Id),
 MemberId INT REFERENCES Members(Id),
-Status VARCHAR(15) NOT NULL CHECK(LOWER(Status) IN ('pripravnik', 'izbacen','zavrsen internship')),
+Status VARCHAR(25) NOT NULL CHECK(LOWER(Status) IN ('pripravnik', 'izbacen','zavrsen internship')),
 PRIMARY KEY(MemberId, FieldId)
 )
 
@@ -64,9 +70,18 @@ HomeworkId INT REFERENCES Homeworks(Id),
 Grade INT NOT NULL CHECK(Grade >= 1 AND Grade <=5)
 )
 
-----------------------------
+CREATE TABLE InternshipMember(
+MemberId INT REFERENCES Members(Id),
+InternshipId INT REFERENCES Internships(Id),
+PRIMARY KEY(MemberId,InternshipId)
+)
+
+
+
+---------------------------- INSERTANJE VRIJEDNOSTI
 
 INSERT INTO Cities(Name) VALUES
+('Moskva'),
 ('Split'),
 ('Zagreb'),
 ('Zadar'),
@@ -75,10 +90,10 @@ INSERT INTO Cities(Name) VALUES
 ('Omis')
 
 INSERT INTO Members(Name, Surname, OIB, DateOfBirth, Sex, CityId) VALUES
-  	('Robert', 'Leskur', '12354678501', '2002-06-25', 'F', 1),
-    ('Toma', 'Mudnic', '23456578912', '2001-04-10', 'M', 2),
-    ('Petar', 'Mandic', '34576890123', '2003-02-08', 'F', 3),
-    ('Filip', 'Vukoja', '45677901234', '2002-11-15', 'M', 1),
+  	('Robert', 'Leskurin', '12354678501', '1992-06-25', 'F', 1),
+    ('Toma', 'Mudnicin', '23456578912', '2001-04-10', 'M', 2),
+    ('Petar', 'Mandicin', '34576890123', '2003-02-08', 'F', 3),
+    ('Filip', 'Vukojin', '45677901234', '2002-11-15', 'M', 1),
 	('Ana', 'Horvat', '12345678501', '2002-06-25', 'F', 1),
     ('Ivan', 'Kovačić', '23456789012', '2001-04-10', 'M', 2),
     ('Elena', 'Babić', '34567890123', '2003-02-08', 'F', 3),
@@ -90,6 +105,28 @@ INSERT INTO Members(Name, Surname, OIB, DateOfBirth, Sex, CityId) VALUES
     ('Iva', 'Novak', '90123456789', '2004-03-05', 'F', 3),
     ('Luka', 'Knežević', '01234567890', '2002-10-09', 'M', 1)
 	
+SELECT * FROM Members
+
+	
+INSERT INTO FieldMember(MemberId, FieldId, Status) VALUES
+(1, 1, 'pripravnik'),
+(2, 1, 'pripravnik'),
+(3, 1, 'izbacen'),
+(4, 2, 'pripravnik'),
+(5, 2, 'pripravnik'),
+(6, 2, 'izbacen'),
+(7, 2, 'zavrsen internship'),
+(8, 3, 'pripravnik'),
+(9, 3, 'pripravnik'),
+(10, 3, 'izbacen'),
+(11, 3, 'zavrsen internship'),
+(12, 4, 'pripravnik'),
+(13, 4, 'pripravnik'),
+(14, 4, 'izbacen')
+
+
+
+
 INSERT INTO Internships(StartingDate,EndingDate,CurrentPhase,LeaderId) VALUES
 ('2018-11-02', '2019-05-01', 'zavrsen', 3),
 ('2019-11-02', '2020-05-01', 'zavrsen', 10),
@@ -97,6 +134,9 @@ INSERT INTO Internships(StartingDate,EndingDate,CurrentPhase,LeaderId) VALUES
 ('2021-11-02', '2022-05-01', 'zavrsen', 5),
 ('2022-11-02', '2023-05-01', 'u tijeku', 6),
 ('2022-11-02', '2023-05-01', 'u pripremi', 2)
+
+INSERT INTO InternshipMember(MemberId, InternshipId) VALUES
+(1, 1), (2, 1), (3, 1), (4, 2), (5, 2), (6, 2), (7, 3), (8, 3), (9, 3), (10, 4), (11, 4), (12, 5), (13, 5), (14, 6)
 	
 INSERT INTO Fields(Name, LeaderId) VALUES
 ('Programiranje', 5),
@@ -123,6 +163,7 @@ INSERT INTO Homeworks(Name, FieldId) VALUES
 ('Mar 3 DR3',4),
 ('Mar 4 DR4',4)
 
+
 INSERT INTO Memberhomework(MemberId, HomeworkId, Grade) VALUES
 (1, 1, 1), (1, 2, 5), (1, 3, 3), (1, 4, 3),
 (2, 1, 2), (2, 2, 4), (2, 3, 2), (2, 4, 4),
@@ -139,11 +180,86 @@ INSERT INTO Memberhomework(MemberId, HomeworkId, Grade) VALUES
 (13, 5, 5), (13, 6, 3), (13, 7, 1), (13, 8, 4),
 (14, 9, 5), (14, 10, 4), (14, 11, 3), (14, 12, 2)
 
+---------------------------- SELEKTIRANJE VRIJEDNOSTI
 
 SELECT * FROM Members
 SELECT * FROM Cities
 SELECT * FROM Internships
 SELECT * FROM Fields
+SELECT * FROM FieldMember
+
+
+SELECT Name,Surname 
+FROM Members 
+WHERE CityId != (SELECT Id 
+				 FROM Cities 
+				 WHERE Name = 'Split')
+
+
+SELECT StartingDate,EndingDate 
+FROM Internships 
+ORDER BY StartingDate DESC
+
+
+SELECT Name, Surname
+FROM Members
+WHERE Id IN (
+    SELECT MemberId
+    FROM InternshipMember
+    WHERE InternshipId IN (
+        SELECT Id
+        FROM Internships
+        WHERE DATE_PART('year', StartingDate) = 2021
+    )
+)
+
+SELECT COUNT(Status) 
+FROM FieldMember 
+WHERE MemberId IN (SELECT Id
+				  FROM Members
+				  WHERE Sex = 'F')
+AND Status = 'pripravnik'
+
+
+SELECT COUNT(Status) 
+FROM FieldMember 
+WHERE FieldId = (SELECT Id 
+				 FROM Fields
+				 WHERE Name = 'Marketing'
+				)
+AND Status = 'izbacen'
+
+
+UPDATE Members
+SET CityId = (SELECT Id 
+			  FROM Cities
+			  WHERE Name = 'Moskva')
+WHERE Surname LIKE '%in'
+
+------------------------------------------------ 1
+DELETE FROM FieldMember
+WHERE MemberId IN (SELECT Id FROM Members WHERE DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 25);
+
+DELETE FROM MemberHomework
+WHERE MemberId IN (SELECT Id FROM Members WHERE DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 25);
+
+DELETE FROM InternshipMember
+WHERE MemberId IN (SELECT Id FROM Members WHERE DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 25);
+------------------------------------------------2
+DELETE FROM Members
+WHERE DATE_PART('year', NOW()) - DATE_PART('year', DateOfBirth) >= 25;
+------------------------------------------------ 3
+
+
+UPDATE FieldMember
+SET Status = 'izbacen'
+WHERE MemberId IN(
+SELECT MemberId
+FROM MemberHomework
+GROUP BY MemberId
+HAVING AVG(Grade) < 2.5
+)
+
 
 
 
